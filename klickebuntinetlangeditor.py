@@ -148,7 +148,7 @@ class foobar(element):
     context.set_source_rgb(self.color[0], self.color[1], self.color[2])
     context.fill()
   
-    for i in self.i_elements():
+    for i in self.draw_elements():
       i.draw(context)
 
 
@@ -280,6 +280,9 @@ class parameter(foobar):
   def i_elements(self):
     yield self.name
 
+  def draw_elements(self):
+    yield self.name
+     
   def in_area(self, position):
     x, y = position
     return (self.position.x < x < self.position.x + 32 and self.position.y < y < self.position.y + 32) or self.in_chield_area(position)
@@ -332,10 +335,10 @@ class attribute(parameter):
       self.parent.key_press(keyval)
 
   def i_elements(self):
-    yield self.name
     if self.arrow:
       yield self.arrow
-     
+    yield self.name
+
   def delete_arrow(self):
     self.arrow = None
 
@@ -347,7 +350,7 @@ class arrow(element):
     self.target = None
 
   def draw(self, context):
-    origin = self.parent.position + vector(16, 16)
+    origin = self.parent.area.topleft + vector(16, 16)
     context.move_to(origin.x, origin.y)
     if self.target:
       context.line_to(self.target.position.x + 16, self.target.position.y + 16)
@@ -367,6 +370,9 @@ class arrow(element):
     if self.drawing_area.selection == self:
       self.target_position = position
       self.drawing_area.redraw()
+
+  def button_release(self, keyval):
+    pass
   
   def unselect_notify(self):
     for i in self.parent.parent.i_parameters():
@@ -385,16 +391,31 @@ class call(container):
     self.attributes = []
     self.parameters = []
     self.color = (0.9, 0.6, 0.1)
+    self.arrow = None
 
   def i_parameters(self):
     return self.parent.i_parameters()
 
-  def i_elements(self):
+  def i_arrows(self):
+    if self.arrow:
+      yield self.arrow
+    for i in self.attributes:
+      if i.arrow:
+        yield i.arrow
+
+  def draw_elements(self):
     yield self.name
     for i in self.attributes:
       yield i
     for i in self.parameters:
       yield i
+
+  def i_elements(self):
+    if self.arrow:
+      yield self.arrow
+    for i in self.draw_elements():
+      yield i
+
   
   def in_area(self, position):
     return position in self.area or self.in_chield_area(position)
@@ -448,10 +469,22 @@ class call(container):
       self.attributes.append(attribute(self.drawing_area, self, vector(self.area.right - 16, self.drawing_area.mouse_position.y)))
       self.area_change_notify()
       self.drawing_area.select(self.attributes[-1])
+    elif keyval == gtk.keysyms.less:
+      if self.arrow:
+        if self.arrow.target:
+          self.arrow.target.untargeted_notify()
+        self.arrow = None
+      self.arrow = arrow(self.drawing_area, self, self.drawing_area.mouse_position)
+      self.drawing_area.select(self.arrow)
+      self.drawing_area.selection_on_mouse = True
+      self.drawing_area.redraw()
     else:
       self.parent.key_press(keyval)
       return
     self.drawing_area.redraw()
+
+  def delete_arrow(self):
+    self.arrow = None
 
 class string(call):
   def __init__(self, drawing_area, parent, position):
@@ -475,6 +508,14 @@ class function(container):
       yield i
     for i in self.elements:
       yield i
+
+  def i_arrows(self):
+    for i in self.attributes:
+      if i.arrow:
+        yield i.arrow
+    for i in self.elements:
+      for j in i.i_arrows():
+        yield j
 
   def i_parameters(self):
     for i in self.parameters:
@@ -559,6 +600,9 @@ class function(container):
     context.set_source_rgb(188.0/255, 239.0/255, 245.0/255)
     context.fill()
     
+    for i in self.i_arrows():
+      i.draw(context)
+  
     for i in self.i_elements():
       i.draw(context)
   
