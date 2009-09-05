@@ -305,7 +305,7 @@ class parameter(foobar):
     self.arrow = None
 
   def area_change_notify(self):
-    pass
+    self.parent.area_change_notify()
         
 class attribute(parameter):
   def __init__(self, drawing_area, parent, position):
@@ -316,6 +316,7 @@ class attribute(parameter):
 
   def area_change_notify(self):
     self.name.move(vector(6 + self.position.x - self.name.area.right, 0))
+    self.parent.area_change_notify()
       
   def key_press(self, keyval):
     if keyval == gtk.keysyms.less:
@@ -405,8 +406,6 @@ class call(container):
     self.parent.area_change_notify()
 
   def area_change_notify(self):
-    self.area.size = vector(max(self.name.area.size.x, 32), self.area.size.y)
-
     top = sys.maxint
     bottom = 0
 
@@ -421,8 +420,19 @@ class call(container):
 
     self.name.move_to(self.area.topleft)
 
+    width = 0
+
     for i in self.parameters:
       i.move_to(vector(self.area.left, i.position.y))
+      for j in self.attributes:
+        if i.name.area.top < j.name.area.top < i.name.area.bottom or j.name.area.top < i.name.area.top < j.name.area.bottom:
+          width = max(width, i.name.area.size.x + j.name.area.size.x)
+      width = max(width, i.name.area.size.x)
+    
+    for i in self.attributes:
+      width = max(width, i.name.area.size.x)
+
+    self.area.size = vector(max(self.name.area.size.x, 32 + width), self.area.size.y)
 
     for i in self.attributes:
       i.move_to(vector(self.area.right, i.position.y))
