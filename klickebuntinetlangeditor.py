@@ -379,7 +379,7 @@ class arrow(element):
 
 class call(container):
   def __init__(self, drawing_area, parent, position):
-    self.super().__init__(drawing_area, parent)
+    super(call, self).__init__(drawing_area, parent)
     self.area = area(position, position + vector(32, 32))
     self.name = text(self.drawing_area, self, self.area.topleft)
     self.attributes = []
@@ -453,6 +453,10 @@ class call(container):
       return
     self.drawing_area.redraw()
 
+class string(call):
+  def __init__(self, drawing_area, parent, position):
+    self.super().__init__(drawing_area, parent, position)
+    self.color = (.8, .3, .2)
 
 class function(container):
   def __init__(self, drawing_area, parent, position):
@@ -490,6 +494,11 @@ class function(container):
       self.drawing_area.select(self.parameters[-1])
     elif keyval == gtk.keysyms.exclam:
       self.elements.append(call(self.drawing_area, self, self.drawing_area.mouse_position - vector(6,6)))
+      self.drawing_area.select(self.elements[-1])
+      self.drawing_area.selection_on_mouse = True
+      self.area_change_notify()
+    elif keyval == gtk.keysyms.quotedbl:
+      self.elements.append(string(self.drawing_area, self, self.drawing_area.mouse_position - vector(6,6)))
       self.drawing_area.select(self.elements[-1])
       self.drawing_area.selection_on_mouse = True
       self.area_change_notify()
