@@ -294,8 +294,6 @@ class parameter(foobar):
       i.move(position)
       
   def button_release(self, position):
-    if self.drawing_area.selection == self:
-      self.parent.change_position(self)
     self.parent.area_change_notify()
 
   def targeted_notify(self, arrow):
@@ -397,12 +395,6 @@ class call(container):
     for i in self.parameters:
       yield i
   
-  def change_position(self, element):
-    if type(element) == parameter:
-      element.move_to(vector(self.area.left, element.position.y))
-    else:
-      element.move_to(vector(self.area.right, element.position.y))
-
   def in_area(self, position):
     return position in self.area or self.in_chield_area(position)
 
@@ -429,7 +421,7 @@ class call(container):
 
     self.name.move_to(self.area.topleft)
 
-    for i in self.attributes:
+    for i in self.parameters:
       i.move_to(vector(self.area.left, i.position.y))
 
     for i in self.attributes:
@@ -476,12 +468,6 @@ class function(container):
     for i in self.elements:
       for j in i.parameters:
         yield j
-
-  def change_position(self, element):
-    if type(element) == attribute:
-      element.move_to(vector(self.area.left, element.position.y))
-    else:
-      element.move_to(vector(self.area.right, element.position.y))
 
   def key_press(self, keyval):
     if keyval in (gtk.keysyms.Control_L, gtk.keysyms.Control_R):
