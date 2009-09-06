@@ -416,7 +416,9 @@ class call(container):
       yield self.arrow
     for i in self.draw_elements():
       yield i
-
+  
+  def add_post_call(self, arrow, position):
+    return self.parent.add_post_call(arrow, position)
   
   def in_area(self, position):
     return position in self.area or self.in_chield_area(position)
@@ -497,6 +499,11 @@ class integer(call):
     self.super().__init__(drawing_area, parent, position)
     self.color = (.8, .4, .8)
 
+class array(call):
+  def __init__(self, drawing_area, parent, position):
+    self.super().__init__(drawing_area, parent, position)
+    self.color = (.2, .1, 1.0)
+
 class post_call(call):
   def __init__(self, drawing_area, parent, position, target_arrow=None):
     self.super().__init__(drawing_area, parent, position)
@@ -569,6 +576,11 @@ class function(container):
       self.area_change_notify()
     elif keyval == gtk.keysyms.i:
       self.elements.append(integer(self.drawing_area, self, self.drawing_area.mouse_position - vector(6,6)))
+      self.drawing_area.select(self.elements[-1])
+      self.drawing_area.selection_on_mouse = True
+      self.area_change_notify()
+    elif keyval == gtk.keysyms.a:
+      self.elements.append(array(self.drawing_area, self, self.drawing_area.mouse_position - vector(6,6)))
       self.drawing_area.select(self.elements[-1])
       self.drawing_area.selection_on_mouse = True
       self.area_change_notify()
