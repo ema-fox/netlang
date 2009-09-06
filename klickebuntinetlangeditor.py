@@ -258,7 +258,7 @@ class parameter(foobar):
     self.name = text(drawing_area, self, self.position + vector(26, 0))
     self.area = area(self.position, self.position + vector(32, 32))
     self.color = (1.0, .8, .0)
-    self.arrow = None
+    self.target_arrow = None
 
   def draw_shadow(self, context):
     self.draw_box(context, self.position.x + 3, self.position.y +3)
@@ -300,12 +300,12 @@ class parameter(foobar):
     self.parent.area_change_notify()
 
   def targeted_notify(self, arrow):
-    if self.arrow:
-      self.arrow.parent.delete_arrow()
-    self.arrow = arrow
+    if self.target_arrow:
+      self.target_arrow.parent.delete_arrow()
+    self.target_arrow = arrow
 
   def untargeted_notify(self):
-    self.arrow = None
+    self.target_arrow = None
 
   def area_change_notify(self):
     self.parent.area_change_notify()
@@ -316,6 +316,7 @@ class attribute(parameter):
     self.name = text(drawing_area, self, self.position - vector(6, 0))
     self.area = area(self.position, self.position + vector(32, 32))
     self.color = (.0, .6, .0)
+    self.arrow = None
 
   def area_change_notify(self):
     self.name.move(vector(6 + self.position.x - self.name.area.right, 0))
@@ -353,7 +354,7 @@ class arrow(element):
     origin = self.parent.area.topleft + vector(16, 16)
     context.move_to(origin.x, origin.y)
     if self.target:
-      context.line_to(self.target.position.x + 16, self.target.position.y + 16)
+      context.line_to(self.target.area.left + 16, self.target.area.top + 16)
     else:
       context.line_to(self.target_position.x, self.target_position.y)
     context.close_path()
@@ -380,8 +381,8 @@ class arrow(element):
         self.target = i
 	self.target.targeted_notify(self)
 	return
-    self.parent.delete_arrow()
-      
+    self.target = self.parent.parent.add_post_call(self, self.target_position)
+    
 
 class call(container):
   def __init__(self, drawing_area, parent, position):
@@ -491,6 +492,26 @@ class string(call):
     self.super().__init__(drawing_area, parent, position)
     self.color = (.8, .3, .2)
 
+class integer(call):
+  def __init__(self, drawing_area, parent, position):
+    self.super().__init__(drawing_area, parent, position)
+    self.color = (.8, .4, .8)
+
+class post_call(call):
+  def __init__(self, drawing_area, parent, position, target_arrow=None):
+    self.super().__init__(drawing_area, parent, position)
+    self.color = (.8, 1.0, .4)
+    self.target_arrow = target_arrow
+
+  def targeted_notify(self, arrow):
+    if self.target_arrow:
+      self.target_arrow.parent.delete_arrow()
+    self.target_arrow = arrow
+
+  def untargeted_notify(self):
+    self.target_arrow = None
+
+
 class function(container):
   def __init__(self, drawing_area, parent, position):
     self.super().__init__(drawing_area, parent)
@@ -523,6 +544,9 @@ class function(container):
     for i in self.elements:
       for j in i.parameters:
         yield j
+    for i in self.elements:
+      if type(i) == post_call:
+        yield i
 
   def key_press(self, keyval):
     if keyval in (gtk.keysyms.Control_L, gtk.keysyms.Control_R):
@@ -543,10 +567,22 @@ class function(container):
       self.drawing_area.select(self.elements[-1])
       self.drawing_area.selection_on_mouse = True
       self.area_change_notify()
+    elif keyval == gtk.keysyms.i:
+      self.elements.append(integer(self.drawing_area, self, self.drawing_area.mouse_position - vector(6,6)))
+      self.drawing_area.select(self.elements[-1])
+      self.drawing_area.selection_on_mouse = True
+      self.area_change_notify()
     else:
       self.parent.key_press(keyval)
       return
     self.drawing_area.redraw()
+
+  def add_post_call(self, arrow, position):
+    self.elements.append(post_call(self.drawing_area, self, position, arrow))
+    self.area_change_notify()
+    self.drawing_area.redraw()
+    return self.elements[-1]
+    
 
   def area_change_notify(self):
     if len(self.elements) > 0:
