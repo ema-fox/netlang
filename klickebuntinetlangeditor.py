@@ -67,6 +67,15 @@ class area(object):
     self.bottomright = self.topleft + size
 
   size = property(get_size, set_size)
+  
+  def get_width(self):
+    return self.right - self.left
+
+  def get_height(self):
+    return self.bottom - self.top
+
+  width = property(get_width)
+  height = property(get_height)
 
   def __contains__(self, other):
     return self.left < other.x < self.right and self.top < other.y < self.bottom
@@ -710,6 +719,7 @@ class root(foobar):
     self.super().__init__(None)
 
     self.elements = []
+    self.area = area(vector(), vector(800, 600))
 
   def delete(self, element):
     self.elements.remove(element)
@@ -748,17 +758,21 @@ def main():
   window.connect("destroy", gtk.main_quit)
   window.connect("key_press_event", key_press)
   window.connect("key_release_event", key_release)
-  window.show_all()
 
   try:
    f = open(sys.argv[1], "r")
    root_widget = pickle.load(f)
    f.close()
+   window.set_default_size(root_widget.area.width, root_widget.area.height)
   except IOError:
    root_widget = root()
+   window.set_default_size(800, 600)
   selection = root_widget
   mouse_position = vector()
   selection_on_mouse = False
+
+
+  window.show_all()
   gtk.main()
  
 def select(element):
@@ -807,6 +821,7 @@ def expose(widget, event):
     context.set_line_width(1)
     drawing_area.width = event.area.width
     drawing_area.height = event.area.height
+    root_widget.area.size = vector(event.area.width, event.area.height)
     draw(context)
     return False
   
