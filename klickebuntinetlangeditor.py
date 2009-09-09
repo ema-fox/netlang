@@ -308,6 +308,15 @@ class parameter(foobar):
 
   def area_change_notify(self):
     self.parent.area_change_notify()
+
+  def key_press(self, keyval):
+    if keyval == gtk.keysyms.Delete:
+      if self.target_arrow:
+        self.target_arrow.parent.delete_arrow()
+      self.parent.delete(self)
+      redraw()
+    else:
+      self.parent.key_press(keyval)
         
 class attribute(parameter):
   def __init__(self, parent, position):
@@ -331,6 +340,9 @@ class attribute(parameter):
       self.arrow = arrow(self, mouse_position)
       select(self.arrow)
       selection_on_mouse = True
+      redraw()
+    elif keyval == gtk.keysyms.Delete:
+      self.parent.delete(self)
       redraw()
     else:
       self.parent.key_press(keyval)
@@ -393,6 +405,14 @@ class call(container):
     self.parameters = []
     self.color = (0.9, 0.6, 0.1)
     self.arrow = None
+
+  def delete(self, element):
+    if type(element) == attribute:
+      self.attributes.remove(element)
+    elif type(element) == parameter:
+      self.parameters.remove(element)
+    if selection == element:
+      select(self)
 
   def i_parameters(self):
     return self.parent.i_parameters()
@@ -481,6 +501,9 @@ class call(container):
       self.arrow = arrow(self, mouse_position)
       select(self.arrow)
       selection_on_mouse = True
+    elif keyval == gtk.keysyms.Delete:
+      self.parent.delete(self)
+      redraw()
     else:
       self.parent.key_press(keyval)
       return
@@ -510,6 +533,14 @@ class post_call(call):
     self.color = (.8, 1.0, .4)
     self.target_arrow = target_arrow
 
+  def key_press(self, keyval):
+    if keyval == gtk.keysyms.Delete:
+      if self.target_arrow:
+        self.target_arrow.parent.delete_arrow()
+      self.parent.delete(self)
+      redraw()
+    else:
+      super(post_call, self).key_press(keyval)
   def targeted_notify(self, arrow):
     if self.target_arrow:
       self.target_arrow.parent.delete_arrow()
@@ -527,6 +558,16 @@ class function(container):
     self.attributes = []
     self.parameters = []
     self.elements = []
+
+  def delete(self, element):
+    if type(element) == attribute:
+      self.attributes.remove(element)
+    elif type(element) == parameter:
+      self.parameters.remove(element)
+    else:
+      self.elements.remove(element)
+    if selection == element:
+      select(self)
 
   def all_elements(self):
     yield self.name
@@ -585,6 +626,9 @@ class function(container):
       select(self.elements[-1])
       selection_on_mouse = True
       self.area_change_notify()
+    elif keyval == gtk.keysyms.Delete:
+      self.parent.delete(self)
+      redraw()
     else:
       self.parent.key_press(keyval)
       return
