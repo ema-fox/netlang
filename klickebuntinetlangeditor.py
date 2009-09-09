@@ -2,7 +2,7 @@
 
 debug = False
 
-import gtk, gtk.keysyms, math, sys
+import gtk, gtk.keysyms, math, sys, pickle
 
 class vector(tuple):
   __slots__ = ()
@@ -706,7 +706,12 @@ def main():
   window.connect("key_release_event", key_release)
   window.show_all()
 
-  root_widget = root()
+  try:
+   f = open(sys.argv[1], "r")
+   root_widget = pickle.load(f)
+   f.close()
+  except IOError:
+   root_widget = root()
   selection = root_widget
   mouse_position = vector()
   selection_on_mouse = False
@@ -741,7 +746,12 @@ def key_press(widget, event):
   for i in gtk.keysyms.__dict__.iteritems():
     if i[1] == event.keyval:
       print i[0]
-  selection.key_press(event.keyval)
+  if event.keyval == gtk.keysyms.F1:
+    f = open(sys.argv[1], "w")
+    pickle.dump(root_widget, f)
+    f.close()
+  else:
+    selection.key_press(event.keyval)
   
 def key_release(widget, event):
   pass
