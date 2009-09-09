@@ -108,7 +108,7 @@ class element(object):
 
 
 class foobar(element):
-  def i_elements(self):
+  def all_elements(self):
     for i in self.elements:
       yield i
 
@@ -116,15 +116,15 @@ class foobar(element):
     if self.drawing_area.selection == self and self.drawing_area.selection_on_mouse:
       self.move(position - self.drawing_area.mouse_position)
       self.drawing_area.redraw()
-    for i in self.i_elements():
+    for i in self.all_elements():
       i.motion_notify(position)
 
   def button_release(self, position):
-    for i in self.i_elements():
+    for i in self.all_elements():
       i.button_release(position)
 
   def in_chield_area(self, position):
-    for i in self.i_elements():
+    for i in self.all_elements():
       if i.in_area(position):
         return i
     return False
@@ -133,7 +133,7 @@ class foobar(element):
     self.draw_box(context, self.area.left + 3, self.area.top +3)
     context.set_source_rgba(0,0,0, 0.3)
     context.fill()
-    for i in self.i_elements():
+    for i in self.all_elements():
       i.draw_shadow(context)
 
   def draw(self, context):
@@ -154,7 +154,7 @@ class foobar(element):
 
   def move(self, position):
     self.area.move(position)
-    for i in self.i_elements():
+    for i in self.all_elements():
       i.move(position)
         
   def button_press(self, position):
@@ -264,7 +264,7 @@ class parameter(foobar):
     self.draw_box(context, self.position.x + 3, self.position.y +3)
     context.set_source_rgba(0,0,0, 0.3)
     context.fill()
-    for i in self.i_elements():
+    for i in self.all_elements():
       i.draw_shadow(context)
 
   def draw_box(self, context, x, y, r=10):
@@ -277,7 +277,7 @@ class parameter(foobar):
     context.curve_to(x,y+r*2, x,y+r, x,y+r)
     context.close_path()
  
-  def i_elements(self):
+  def all_elements(self):
     yield self.name
 
   def draw_elements(self):
@@ -293,7 +293,7 @@ class parameter(foobar):
   def move(self, position):
     self.position += position
     self.area.move(position)
-    for i in self.i_elements():
+    for i in self.all_elements():
       i.move(position)
       
   def button_release(self, position):
@@ -335,7 +335,7 @@ class attribute(parameter):
     else:
       self.parent.key_press(keyval)
 
-  def i_elements(self):
+  def all_elements(self):
     if self.arrow:
       yield self.arrow
     yield self.name
@@ -411,7 +411,7 @@ class call(container):
     for i in self.parameters:
       yield i
 
-  def i_elements(self):
+  def all_elements(self):
     if self.arrow:
       yield self.arrow
     for i in self.draw_elements():
@@ -425,7 +425,7 @@ class call(container):
 
   def move(self, position):
     self.area.move(position)
-    for i in self.i_elements():
+    for i in self.all_elements():
       i.move(position)
     self.parent.area_change_notify()
 
@@ -528,7 +528,7 @@ class function(container):
     self.parameters = []
     self.elements = []
 
-  def i_elements(self):
+  def all_elements(self):
     yield self.name
     for i in self.attributes:
       yield i
@@ -651,7 +651,7 @@ class function(container):
     for i in self.i_arrows():
       i.draw(context)
   
-    for i in self.i_elements():
+    for i in self.all_elements():
       i.draw(context)
   
 
@@ -761,5 +761,5 @@ class drawing_area(gtk.DrawingArea):
   def main(self):
     gtk.main()
 
-
-drawing_area().main()
+if __name__ == "__main__":
+  drawing_area().main()
