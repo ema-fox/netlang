@@ -84,8 +84,7 @@ class element(object):
   def super(self):
     return super(self.__class__, self)
 
-  def __init__(self, drawing_area, parent):
-    self.drawing_area = drawing_area
+  def __init__(self, parent):
     self.parent = parent
 
   def unselect_notify(self):
@@ -95,7 +94,7 @@ class element(object):
     pass
   
   def button_press(self, position):
-    self.drawing_area.select(self)
+    select(self)
   
   def move(self, position):
     self.area.move(position)
@@ -113,9 +112,9 @@ class foobar(element):
       yield i
 
   def motion_notify(self, position):
-    if self.drawing_area.selection == self and self.drawing_area.selection_on_mouse:
-      self.move(position - self.drawing_area.mouse_position)
-      self.drawing_area.redraw()
+    if selection == self and selection_on_mouse:
+      self.move(position - mouse_position)
+      redraw()
     for i in self.all_elements():
       i.motion_notify(position)
 
@@ -142,7 +141,7 @@ class foobar(element):
       context.set_source_rgb(1.0, .0, .0)
       context.fill()
 
-    if self.drawing_area.selection == self:
+    if selection == self:
       self.draw_shadow(context)
     self.draw_box(context, self.area.left, self.area.top)
     context.set_source_rgb(self.color[0], self.color[1], self.color[2])
@@ -162,8 +161,8 @@ class foobar(element):
     if chield:
       chield.button_press(position)
     else:
-      self.drawing_area.select(self)
-    self.drawing_area.redraw()
+      select(self)
+    redraw()
   
   
 class container(foobar):
@@ -189,22 +188,22 @@ class container(foobar):
     context.close_path()
 
 class text(element):
-  def __init__(self, drawing_area, parent, position):
-    self.super().__init__(drawing_area, parent)
+  def __init__(self, parent, position):
+    self.super().__init__(parent)
     self.text = u""
 
-    context = self.drawing_area.window.cairo_create()
+    context = drawing_area.window.cairo_create()
     textlayout = context.create_layout()
-    textlayout.set_font_description(self.drawing_area.get_style().font_desc)
+    textlayout.set_font_description(drawing_area.get_style().font_desc)
     textlayout.set_text(self.text)
     s = vector(textlayout.get_pixel_size())
     self.area = area(position, position + vector(12, 12))
     self.area.size += s
 
   def update_area(self):
-    context = self.drawing_area.window.cairo_create()
+    context = drawing_area.window.cairo_create()
     textlayout = context.create_layout()
-    textlayout.set_font_description(self.drawing_area.get_style().font_desc)
+    textlayout.set_font_description(drawing_area.get_style().font_desc)
     textlayout.set_text(self.text)
     self.area.size = vector(textlayout.get_pixel_size()) + vector(12, 12)
 
@@ -218,9 +217,9 @@ class text(element):
       context.fill()
 
     textlayout = context.create_layout()
-    textlayout.set_font_description(self.drawing_area.get_style().font_desc)
+    textlayout.set_font_description(drawing_area.get_style().font_desc)
     textlayout.set_text(self.text)
-    if self.drawing_area.selection == self:
+    if selection == self:
       context.rectangle(self.area.left, self.area.top, self.area.size.x, self.area.size.y)
       context.set_source_rgba(0,0,0,0.1)
       context.fill()
@@ -245,17 +244,17 @@ class text(element):
       return
     self.update_area()
     self.parent.area_change_notify()
-    self.drawing_area.redraw()
+    redraw()
 
   def move_to(self, position):
     self.position = position
     self.area.move_to(position)
     
 class parameter(foobar):
-  def __init__(self, drawing_area, parent, position):
-    super(parameter, self).__init__(drawing_area, parent)
+  def __init__(self, parent, position):
+    super(parameter, self).__init__(parent)
     self.position = position
-    self.name = text(drawing_area, self, self.position + vector(26, 0))
+    self.name = text(self, self.position + vector(26, 0))
     self.area = area(self.position, self.position + vector(32, 32))
     self.color = (1.0, .8, .0)
     self.target_arrow = None
@@ -311,9 +310,9 @@ class parameter(foobar):
     self.parent.area_change_notify()
         
 class attribute(parameter):
-  def __init__(self, drawing_area, parent, position):
-    super(attribute, self).__init__(drawing_area, parent, position)
-    self.name = text(drawing_area, self, self.position - vector(6, 0))
+  def __init__(self, parent, position):
+    super(attribute, self).__init__(parent, position)
+    self.name = text(self, self.position - vector(6, 0))
     self.area = area(self.position, self.position + vector(32, 32))
     self.color = (.0, .6, .0)
     self.arrow = None
@@ -323,15 +322,16 @@ class attribute(parameter):
     self.parent.area_change_notify()
       
   def key_press(self, keyval):
+    global selection_on_mouse
     if keyval == gtk.keysyms.less:
       if self.arrow:
         if self.arrow.target:
           self.arrow.target.untargeted_notify()
         self.arrow = None
-      self.arrow = arrow(self.drawing_area, self, self.drawing_area.mouse_position)
-      self.drawing_area.select(self.arrow)
-      self.drawing_area.selection_on_mouse = True
-      self.drawing_area.redraw()
+      self.arrow = arrow(self, mouse_position)
+      select(self.arrow)
+      selection_on_mouse = True
+      redraw()
     else:
       self.parent.key_press(keyval)
 
@@ -345,8 +345,8 @@ class attribute(parameter):
 
 
 class arrow(element):
-  def __init__(self, drawing_area, parent, target_position):
-    self.super().__init__(drawing_area, parent)
+  def __init__(self, parent, target_position):
+    self.super().__init__(parent)
     self.target_position = target_position
     self.target = None
 
@@ -368,9 +368,9 @@ class arrow(element):
     pass
 
   def motion_notify(self, position):
-    if self.drawing_area.selection == self:
+    if selection == self:
       self.target_position = position
-      self.drawing_area.redraw()
+      redraw()
 
   def button_release(self, keyval):
     pass
@@ -385,10 +385,10 @@ class arrow(element):
     
 
 class call(container):
-  def __init__(self, drawing_area, parent, position):
-    super(call, self).__init__(drawing_area, parent)
+  def __init__(self, parent, position):
+    super(call, self).__init__(parent)
     self.area = area(position, position + vector(32, 32))
-    self.name = text(self.drawing_area, self, self.area.topleft)
+    self.name = text(self, self.area.topleft)
     self.attributes = []
     self.parameters = []
     self.color = (0.9, 0.6, 0.1)
@@ -464,49 +464,49 @@ class call(container):
     self.parent.area_change_notify()
 
   def key_press(self, keyval):
+    global selection_on_mouse
     if keyval in (gtk.keysyms.Control_L, gtk.keysyms.Control_R):
-      self.parameters.append(parameter(self.drawing_area, self, vector(self.area.left - 16, self.drawing_area.mouse_position.y)))
+      self.parameters.append(parameter(self, vector(self.area.left - 16, mouse_position.y)))
       self.area_change_notify()
-      self.drawing_area.select(self.parameters[-1])
+      select(self.parameters[-1])
     elif keyval in (gtk.keysyms.Alt_L, gtk.keysyms.Alt_R):
-      self.attributes.append(attribute(self.drawing_area, self, vector(self.area.right - 16, self.drawing_area.mouse_position.y)))
+      self.attributes.append(attribute(self, vector(self.area.right - 16, mouse_position.y)))
       self.area_change_notify()
-      self.drawing_area.select(self.attributes[-1])
+      select(self.attributes[-1])
     elif keyval == gtk.keysyms.less:
       if self.arrow:
         if self.arrow.target:
           self.arrow.target.untargeted_notify()
         self.arrow = None
-      self.arrow = arrow(self.drawing_area, self, self.drawing_area.mouse_position)
-      self.drawing_area.select(self.arrow)
-      self.drawing_area.selection_on_mouse = True
-      self.drawing_area.redraw()
+      self.arrow = arrow(self, mouse_position)
+      select(self.arrow)
+      selection_on_mouse = True
     else:
       self.parent.key_press(keyval)
       return
-    self.drawing_area.redraw()
+    redraw()
 
   def delete_arrow(self):
     self.arrow = None
 
 class string(call):
-  def __init__(self, drawing_area, parent, position):
-    self.super().__init__(drawing_area, parent, position)
+  def __init__(self, parent, position):
+    self.super().__init__(parent, position)
     self.color = (.8, .3, .2)
 
 class integer(call):
-  def __init__(self, drawing_area, parent, position):
-    self.super().__init__(drawing_area, parent, position)
+  def __init__(self, parent, position):
+    self.super().__init__(parent, position)
     self.color = (.8, .4, .8)
 
 class array(call):
-  def __init__(self, drawing_area, parent, position):
-    self.super().__init__(drawing_area, parent, position)
+  def __init__(self, parent, position):
+    self.super().__init__(parent, position)
     self.color = (.2, .1, 1.0)
 
 class post_call(call):
-  def __init__(self, drawing_area, parent, position, target_arrow=None):
-    self.super().__init__(drawing_area, parent, position)
+  def __init__(self, parent, position, target_arrow=None):
+    self.super().__init__(parent, position)
     self.color = (.8, 1.0, .4)
     self.target_arrow = target_arrow
 
@@ -520,10 +520,10 @@ class post_call(call):
 
 
 class function(container):
-  def __init__(self, drawing_area, parent, position):
-    self.super().__init__(drawing_area, parent)
+  def __init__(self, parent, position):
+    self.super().__init__(parent)
     self.area = area(position, position + vector(32, 32))
-    self.name = text(self.drawing_area, self, self.area.topleft)
+    self.name = text(self, self.area.topleft)
     self.attributes = []
     self.parameters = []
     self.elements = []
@@ -556,43 +556,44 @@ class function(container):
         yield i
 
   def key_press(self, keyval):
+    global selection_on_mouse
     if keyval in (gtk.keysyms.Control_L, gtk.keysyms.Control_R):
-      self.attributes.append(attribute(self.drawing_area, self, vector(self.area.left - 16, self.drawing_area.mouse_position.y)))
+      self.attributes.append(attribute(self, vector(self.area.left - 16, mouse_position.y)))
       self.area_change_notify()
-      self.drawing_area.select(self.attributes[-1])
+      select(self.attributes[-1])
     elif keyval in (gtk.keysyms.Alt_L, gtk.keysyms.Alt_R):
-      self.parameters.append(parameter(self.drawing_area, self, vector(self.area.right - 16, self.drawing_area.mouse_position.y)))
+      self.parameters.append(parameter(self, vector(self.area.right - 16, mouse_position.y)))
       self.area_change_notify()
-      self.drawing_area.select(self.parameters[-1])
+      select(self.parameters[-1])
     elif keyval == gtk.keysyms.exclam:
-      self.elements.append(call(self.drawing_area, self, self.drawing_area.mouse_position - vector(6,6)))
-      self.drawing_area.select(self.elements[-1])
-      self.drawing_area.selection_on_mouse = True
+      self.elements.append(call(self, mouse_position - vector(6,6)))
+      select(self.elements[-1])
+      selection_on_mouse = True
       self.area_change_notify()
     elif keyval == gtk.keysyms.quotedbl:
-      self.elements.append(string(self.drawing_area, self, self.drawing_area.mouse_position - vector(6,6)))
-      self.drawing_area.select(self.elements[-1])
-      self.drawing_area.selection_on_mouse = True
+      self.elements.append(string(self, mouse_position - vector(6,6)))
+      select(self.elements[-1])
+      selection_on_mouse = True
       self.area_change_notify()
     elif keyval == gtk.keysyms.i:
-      self.elements.append(integer(self.drawing_area, self, self.drawing_area.mouse_position - vector(6,6)))
-      self.drawing_area.select(self.elements[-1])
-      self.drawing_area.selection_on_mouse = True
+      self.elements.append(integer(self, mouse_position - vector(6,6)))
+      select(self.elements[-1])
+      selection_on_mouse = True
       self.area_change_notify()
     elif keyval == gtk.keysyms.a:
-      self.elements.append(array(self.drawing_area, self, self.drawing_area.mouse_position - vector(6,6)))
-      self.drawing_area.select(self.elements[-1])
-      self.drawing_area.selection_on_mouse = True
+      self.elements.append(array(self, mouse_position - vector(6,6)))
+      select(self.elements[-1])
+      selection_on_mouse = True
       self.area_change_notify()
     else:
       self.parent.key_press(keyval)
       return
-    self.drawing_area.redraw()
+    redraw()
 
   def add_post_call(self, arrow, position):
-    self.elements.append(post_call(self.drawing_area, self, position, arrow))
+    self.elements.append(post_call(self, position, arrow))
     self.area_change_notify()
-    self.drawing_area.redraw()
+    redraw()
     return self.elements[-1]
     
 
@@ -642,7 +643,7 @@ class function(container):
       context.set_source_rgb(1.0, .0, .0)
       context.fill()
 
-    if self.drawing_area.selection == self:
+    if selection == self:
       self.draw_shadow(context)
     self.draw_box(context, self.area.left, self.area.top)
     context.set_source_rgb(188.0/255, 239.0/255, 245.0/255)
@@ -661,8 +662,8 @@ class function(container):
 
 
 class root(foobar):
-  def __init__(self, drawing_area):
-    self.super().__init__(drawing_area, None)
+  def __init__(self):
+    self.super().__init__(None)
 
     self.elements = []
 
@@ -675,91 +676,94 @@ class root(foobar):
       i.draw(context)
 
   def key_press(self, keyval):
+    global selection_on_mouse
     if keyval == gtk.keysyms.Escape:
-      self.drawing_area.quit()
+      quit()
     elif keyval == gtk.keysyms.space:
-      self.elements.append(function(self.drawing_area, self, self.drawing_area.mouse_position - vector(6,6)))
-      self.drawing_area.select(self.elements[-1])
-      self.drawing_area.selection_on_mouse = True
-      self.drawing_area.redraw()
+      self.elements.append(function(self, mouse_position - vector(6,6)))
+      select(self.elements[-1])
+      selection_on_mouse = True
+      redraw()
 
   def move(self, position):
     pass
   
+def main():
+  global drawing_area, window, root_widget, selection, mouse_position, selection_on_mouse
+  drawing_area = gtk.DrawingArea()
 
-class drawing_area(gtk.DrawingArea):
-  def __init__(self):
-    super(drawing_area, self).__init__()
+  drawing_area.connect("expose_event", expose)
+  drawing_area.connect("button_press_event", button_press)
+  drawing_area.connect("button_release_event", button_release)
+  drawing_area.connect("motion_notify_event", motion_notify)
+  drawing_area.add_events(gtk.gdk.BUTTON_PRESS_MASK | gtk.gdk.BUTTON_RELEASE_MASK | gtk.gdk.POINTER_MOTION_MASK)
 
-    self.connect("expose_event", self.expose)
-    self.connect("button_press_event", self.button_press)
-    self.connect("button_release_event", self.button_release)
-    self.connect("motion_notify_event", self.motion_notify)
-    self.add_events(gtk.gdk.BUTTON_PRESS_MASK | gtk.gdk.BUTTON_RELEASE_MASK | gtk.gdk.POINTER_MOTION_MASK)
+  window = gtk.Window()
+  drawing_area.modify_bg(gtk.STATE_NORMAL, gtk.gdk.Color(65535, 65535, 65535))
+  window.add(drawing_area)
+  window.connect("destroy", gtk.main_quit)
+  window.connect("key_press_event", key_press)
+  window.connect("key_release_event", key_release)
+  window.show_all()
 
-    window = gtk.Window()
-    self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.Color(65535, 65535, 65535))
-    window.add(self)
-    window.connect("destroy", gtk.main_quit)
-    window.connect("key_press_event", self.key_press)
-    window.connect("key_release_event", self.key_release)
-    window.show_all()
-
-    self.root = root(self)
-    self.selection = self.root
-    self.mouse_position = vector()
-    self.selection_on_mouse = False
+  root_widget = root()
+  selection = root_widget
+  mouse_position = vector()
+  selection_on_mouse = False
+  gtk.main()
  
-  def select(self, element):
-    if not self.selection == element:
-      self.selection.unselect_notify()
-      self.selection = element
+def select(element):
+  global selection
+  if not selection == element:
+    selection.unselect_notify()
+    selection = element
 
-  def quit(self):
-    gtk.main_quit()
+def quit():
+  gtk.main_quit()
 
-  def motion_notify(self, widget, event):
-    self.root.motion_notify(vector(event.x, event.y))
-    self.mouse_position = vector(event.x, event.y)
+def motion_notify(widget, event):
+  global mouse_position
+  root_widget.motion_notify(vector(event.x, event.y))
+  mouse_position = vector(event.x, event.y)
 
-  def button_press(self, widget, event):
-    self.selection_on_mouse = True
-    self.root.button_press(vector(event.x, event.y))
+def button_press(widget, event):
+  global selection_on_mouse
+  selection_on_mouse = True
+  root_widget.button_press(vector(event.x, event.y))
   
-  def button_release(self, widget, event):
-    self.selection_on_mouse = False
-    self.root.button_release(vector(event.x, event.y))
-    self.redraw()
+def button_release(widget, event):
+  global selection_on_mouse
+  selection_on_mouse = False
+  root_widget.button_release(vector(event.x, event.y))
+  redraw()
 
-  def key_press(self, widget, event):
-    for i in gtk.keysyms.__dict__.iteritems():
-      if i[1] == event.keyval:
-        print i[0]
-    self.selection.key_press(event.keyval)
+def key_press(widget, event):
+  for i in gtk.keysyms.__dict__.iteritems():
+    if i[1] == event.keyval:
+      print i[0]
+  selection.key_press(event.keyval)
   
-  def key_release(self, widget, event):
-    pass
+def key_release(widget, event):
+  pass
 
-  def expose(self, widget, event):
+def expose(widget, event):
     context = widget.window.cairo_create()
     context.rectangle(event.area.x, event.area.y, event.area.width, event.area.height)
     context.clip()
     context.set_line_width(1)
-    self.width = event.area.width
-    self.height = event.area.height
-    self.draw(context)
+    drawing_area.width = event.area.width
+    drawing_area.height = event.area.height
+    draw(context)
     return False
   
-  def redraw(self):
-    if self.window:
-      alloc = self.get_allocation()
-      self.queue_draw_area(alloc.x, alloc.y, alloc.width, alloc.height)
+def redraw():
+    if window:
+      alloc = drawing_area.get_allocation()
+      drawing_area.queue_draw_area(alloc.x, alloc.y, alloc.width, alloc.height)
 
-  def draw(self, context):
-    self.root.draw(context)
+def draw(context):
+  root_widget.draw(context)
 
-  def main(self):
-    gtk.main()
 
 if __name__ == "__main__":
-  drawing_area().main()
+  main()
