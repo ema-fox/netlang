@@ -713,6 +713,43 @@ class function(container):
     x, y = position
     return position in self.area or self.in_chield_area(position)
 
+class includes(container):
+  def __init__(self, parent, position):
+    self.parent = parent
+    self.area = area(position, position +vector(32, 32))
+    self.color = (.1, .4, .0)
+    self.elements = [text(self, self.area.topleft)]
+
+  def draw_elements(self):
+    for i in self.elements:
+      yield i
+
+  def in_area(self, position):
+    return position in self.area
+
+  def area_change_notify(self):
+    width = 32
+    for i in self.elements:
+      width = max(width, i.area.width)
+
+    self.area.size = vector(width, len(self.elements) * 32)
+
+  def button_press(self, position):
+    chield = self.in_chield_area(position)
+    if chield:
+      chield.button_press(position)
+    else:
+      select(self)
+      i = 0
+      while i < len(self.elements):
+        if self.elements[i].text == "":
+          del self.elements[i]
+        else:
+          self.elements[i].move_to(self.area.topleft + vector(0, + i * 32))
+          i += 1
+      self.elements.append(text(self, self.area.topleft + vector(0, len(self.elements) * 32)))
+      self.area_change_notify()
+    redraw()
 
 class root(foobar):
   def __init__(self):
@@ -735,6 +772,11 @@ class root(foobar):
       quit()
     elif keyval == gtk.keysyms.space:
       self.elements.append(function(self, mouse_position - vector(6,6)))
+      select(self.elements[-1])
+      selection_on_mouse = True
+      redraw()
+    elif keyval == gtk.keysyms.i:
+      self.elements.append(includes(self, mouse_position - vector(6,6)))
       select(self.elements[-1])
       selection_on_mouse = True
       redraw()
