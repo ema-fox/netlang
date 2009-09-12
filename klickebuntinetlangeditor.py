@@ -90,12 +90,6 @@ class area(object):
     self.size = size
  
 class element(object):
-  def super(self):
-    return super(self.__class__, self)
-
-  def __init__(self, parent):
-    self.parent = parent
-
   def unselect_notify(self):
     pass
   
@@ -104,9 +98,6 @@ class element(object):
   
   def button_press(self, position):
     select(self)
-  
-  def move(self, position):
-    self.area.move(position)
   
   def key_press(self, keyval):
     self.parent.key_press(keyval)
@@ -175,15 +166,6 @@ class foobar(element):
   
   
 class container(foobar):
-  def get_bad(self):
-    raise AssertionError
-
-  def set_bad(self, value):
-    raise AssertionError
-
-  position = property(get_bad, set_bad)
-  size = property(get_bad, set_bad)
-
   def draw_box(self, context, x, y, r=16):
     w, h = self.area.size
     context.move_to(x, y+r)
@@ -198,7 +180,7 @@ class container(foobar):
 
 class text(element):
   def __init__(self, parent, position):
-    self.super().__init__(parent)
+    self.parent = parent
     self.text = u""
 
     context = drawing_area.window.cairo_create()
@@ -237,6 +219,9 @@ class text(element):
     context.set_source_rgb(.0, .0, .0)
     context.show_layout(textlayout)
     
+  def move(self, position):
+    self.area.move(position)
+  
   def in_area(self, position):
     return position in self.area
 
@@ -261,7 +246,7 @@ class text(element):
     
 class parameter(foobar):
   def __init__(self, parent, position):
-    super(parameter, self).__init__(parent)
+    self.parent = parent
     self.position = position
     self.name = text(self, self.position + vector(26, 0))
     self.area = area(self.position, self.position + vector(32, 32))
@@ -367,7 +352,7 @@ class attribute(parameter):
 
 class arrow(element):
   def __init__(self, parent, target_position):
-    self.super().__init__(parent)
+    self.parent = parent
     self.target_position = target_position
     self.target = None
 
@@ -407,7 +392,7 @@ class arrow(element):
 
 class call(container):
   def __init__(self, parent, position):
-    super(call, self).__init__(parent)
+    self.parent = parent
     self.area = area(position, position + vector(32, 32))
     self.name = text(self, self.area.topleft)
     self.attributes = []
@@ -523,22 +508,22 @@ class call(container):
 
 class string(call):
   def __init__(self, parent, position):
-    self.super().__init__(parent, position)
+    super(string, self).__init__(parent, position)
     self.color = (.8, .3, .2)
 
 class integer(call):
   def __init__(self, parent, position):
-    self.super().__init__(parent, position)
+    super(integer, self).__init__(parent, position)
     self.color = (.8, .4, .8)
 
 class array(call):
   def __init__(self, parent, position):
-    self.super().__init__(parent, position)
+    super(array, self).__init__(parent, position)
     self.color = (.2, .1, 1.0)
 
 class post_call(call):
   def __init__(self, parent, position, target_arrow=None):
-    self.super().__init__(parent, position)
+    super(post_call, self).__init__(parent, position)
     self.color = (.8, 1.0, .4)
     self.target_arrow = target_arrow
 
@@ -561,7 +546,7 @@ class post_call(call):
 
 class function(container):
   def __init__(self, parent, position):
-    self.super().__init__(parent)
+    self.parent = parent
     self.area = area(position, position + vector(32, 32))
     self.name = text(self, self.area.topleft)
     self.attributes = []
@@ -753,7 +738,7 @@ class includes(container):
 
 class root(foobar):
   def __init__(self):
-    self.super().__init__(None)
+    #self.parent = None
 
     self.elements = []
     self.area = area(vector(), vector(800, 600))
