@@ -641,7 +641,6 @@ class function(container):
       self.area_change_notify()
     elif keyval == gtk.keysyms.Delete:
       self.parent.delete(self)
-      redraw()
     else:
       self.parent.key_press(keyval)
       return
@@ -754,6 +753,13 @@ class includes(container):
       self.elements.append(text(self, self.area.topleft + vector(0, len(self.elements) * 32)))
       self.area_change_notify()
     redraw()
+
+  def key_press(self, keyval):
+    if keyval == gtk.keysyms.Delete:
+      self.parent.delete(self)
+      redraw()
+    else:
+      self.parent.key_press(keyval)
 
 class root(foobar):
   def __init__(self):
