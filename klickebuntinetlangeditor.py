@@ -349,6 +349,11 @@ class attribute(parameter):
   def delete_arrow(self):
     self.arrow = None
 
+class parameter_as_attribute(attribute):
+  def __init__(self, parent, position):
+    super(parameter_as_attribute, self).__init__(parent, position)
+    self.color = (1.0, 0.8, .0)
+
 
 class arrow(element):
   def __init__(self, parent, target_position):
@@ -599,6 +604,10 @@ class function(container):
     global selection_on_mouse
     if keyval in (gtk.keysyms.Control_L, gtk.keysyms.Control_R):
       self.attributes.append(attribute(self, vector(self.area.left - 16, mouse_position.y)))
+      self.area_change_notify()
+      select(self.attributes[-1])
+    elif keyval == gtk.keysyms.p:
+      self.attributes.append(parameter_as_attribute(self, vector(self.area.left - 16, mouse_position.y)))
       self.area_change_notify()
       select(self.attributes[-1])
     elif keyval in (gtk.keysyms.Alt_L, gtk.keysyms.Alt_R):
