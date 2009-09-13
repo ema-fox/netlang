@@ -521,6 +521,11 @@ class array(call):
     super(array, self).__init__(parent, position)
     self.color = (.2, .1, 1.0)
 
+class case(call):
+  def __init__(self, parent, position):
+    super(case, self).__init__(parent, position)
+    self.color = (.9, 0.5, 0.7)
+
 class post_call(call):
   def __init__(self, parent, position, target_arrow=None):
     super(post_call, self).__init__(parent, position)
@@ -617,6 +622,11 @@ class function(container):
       self.area_change_notify()
     elif keyval == gtk.keysyms.a:
       self.elements.append(array(self, mouse_position - vector(6,6)))
+      select(self.elements[-1])
+      selection_on_mouse = True
+      self.area_change_notify()
+    elif keyval == gtk.keysyms.c:
+      self.elements.append(case(self, mouse_position - vector(6,6)))
       select(self.elements[-1])
       selection_on_mouse = True
       self.area_change_notify()
